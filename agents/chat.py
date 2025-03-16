@@ -40,9 +40,8 @@ class ChatAgent:
         intent = self._classify_intent(user_input)  # Calls Groq to classify intent
 
         if intent == "restaurants":
-            # details = self._extract_restaurant_details(user_input)  # Calls Groq again for details
-            # return {"intent": "restaurants", **details}
-            return {"intent": "restaurants"}
+            details = self._extract_restaurant_details(user_input)  # Calls Groq again for details
+            return {"intent": "restaurants", **details}
         elif intent== "reservation":
             return {"intent": "reservation"}
         
@@ -105,10 +104,11 @@ class ChatAgent:
             "messages": [{
                 "role": "user",
                 "content": (
-                    "Extract structured details in JSON format with keys: "
+                    "Only extract structured details in JSON format with keys: "
                     "'city', 'cuisine', 'num_people', and 'time'. "
                     "If any detail is missing, return it as null. "
-                    "Ensure the output is a pure JSON object. "
+                    "Strictly return only a pure JSON object with no extra text. "
+                    "Donot do internal search"
                     f"User input: {user_input}"
                 )
             }]
@@ -118,16 +118,30 @@ class ChatAgent:
 
         if response.status_code == 200:
             try:
-                details = json.loads(response.json()["choices"][0]["message"]["content"])
+                groq_response = response.json()["choices"][0]["message"]["content"].strip()
+
+                # Ensure JSON-only response by removing backticks or text artifacts
+                groq_response = re.sub(r'```json\n(.*?)\n```', r'\1', groq_response, flags=re.DOTALL)
+                groq_response = re.sub(r'```(.*?)```', r'\1', groq_response, flags=re.DOTALL)
+                groq_response = re.sub(r'^`(.*)`$', r'\1', groq_response, flags=re.DOTALL)
+
+                # Parse cleaned JSON
+                details = json.loads(groq_response)
+
                 return {
                     "city": details.get("city"),
                     "cuisine": details.get("cuisine"),
                     "num_people": details.get("num_people"),
                     "time": details.get("time")
                 }
-            except (json.JSONDecodeError, KeyError):
+
+            except (json.JSONDecodeError, KeyError) as e:
+                print(f"Parsing Error: {e}")
+                print(f"Groq Raw Response: {response.text}")  # Debugging
                 return {"city": None, "cuisine": None, "num_people": None, "time": None}
-        return {"city": None, "cuisine": None, "num_people": None, "time": None}  # Default on API error
+
+        print(f"API Error: {response.status_code} - {response.text}")
+        return {"city": None, "cuisine": None, "num_people": None, "time": None}  # Default on failure
 
     
     def chat(self):
