@@ -11,17 +11,31 @@ class ReservationAgent:
             backstory="An AI-powered agent trained in restaurant management and customer service."
         )
 
-    def check_availability(self, restaurant_id, date, time):
-        """Checks if a table is available at the given restaurant, date, and time."""
+    def check_availability(self, restaurant_id, date, time, num_people):
+        """Checks if a table is available at the given restaurant, date, time, and number of people."""
         query = """
-        SELECT table_id FROM reservations
-        WHERE restaurant_id = :restaurant_id AND reservation_time = :reservation_time AND status = 'confirmed'
+        SELECT id, seating_capacity 
+        FROM tables
+        WHERE restaurant_id = :restaurant_id
+        AND seating_capacity >= :num_people
+        AND is_available = TRUE
+        AND id NOT IN (
+            SELECT table_id 
+            FROM reservations 
+            WHERE restaurant_id = :restaurant_id 
+            AND reservation_time = :reservation_time
+            AND status = 'confirmed'
+        )
         """
-        booked_tables = self.db_agent.fetch(query, {"restaurant_id": restaurant_id, "reservation_time": f"{date} {time}"})
-        
-        if booked_tables:
-            return {"available": False, "message": "No tables available at this time."}
-        return {"available": True, "message": "Tables are available for booking."}
+        available_tables = self.db_agent.fetch(query, {
+            "restaurant_id": restaurant_id,
+            "reservation_time": f"{date} {time}",
+            "num_people": num_people
+        })
+
+        if available_tables:
+            return {"available": True, "message": "Tables are available for booking."}
+        return {"available": False, "message": "No tables available at this time."}
 
     def book_table(self, restaurant_id, table_id, customer_name, customer_contact, date, time):
         """Books a table for a customer at a restaurant."""
@@ -31,8 +45,8 @@ class ReservationAgent:
             return {"status": "failed", "message": "No available tables at this time."}
 
         insert_query = """
-        INSERT INTO reservations (restaurant_id, table_id, customer_name, customer_contact, reservation_time, status, created_at)
-        VALUES (:restaurant_id, :table_id, :customer_name, :customer_contact, :reservation_time, 'pending', NOW())
+        INSERT INTO reservations (restaurant_id, table_id, customer_name, customer_contact, num_people, reservation_time, status, created_at)
+        VALUES (:restaurant_id, :table_id, :customer_name, :customer_contact, :num_people, :reservation_time, 'pending', NOW())
         RETURNING id;
         """
         
