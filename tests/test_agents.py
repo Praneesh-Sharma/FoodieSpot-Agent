@@ -21,17 +21,20 @@ def test_reservation_agent_check_availability():
     logger.info("Testing ReservationAgent check_availability...")
     res_agent = ReservationAgent()
     result = res_agent.check_availability(1, "2025-03-16", "18:00:00")  # Added a sample date
-    assert isinstance(result, str)
+    assert isinstance(result, dict), f"Expected dict, but got {type(result)}"
+    assert "available" in result, "Missing 'available' key in response"
+    assert "message" in result, "Missing 'message' key in response"
     logger.info("ReservationAgent availability check test passed.")
     print("ReservationAgent availability check test passed.")
 
 def test_reservation_agent_book():
     logger.info("Testing ReservationAgent book_table...")
     res_agent = ReservationAgent()
-    result = res_agent.book_table(1, "2024-03-17", "18:00:00")
+    result = res_agent.book_table(1, 5, "Demo User", "9812345670", "2025-03-17", "18:00:00")  # Fixed parameters
     logger.info(f"Booking result: {result}")  # Log the response
     assert isinstance(result, dict), f"Expected dict, but got {type(result)}"
     assert "status" in result, "Missing 'status' key in response"
+    assert result["status"] in ["success", "failed"], "Invalid status value"
     logger.info("ReservationAgent booking test passed.")
     print("ReservationAgent booking test passed.")
 
@@ -39,3 +42,4 @@ if __name__ == "__main__":
     test_recommendation_agent()
     test_reservation_agent_check_availability()
     test_reservation_agent_book()
+        
