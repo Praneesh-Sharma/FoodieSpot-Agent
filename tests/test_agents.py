@@ -12,6 +12,7 @@ def test_recommendation_agent():
     logger.info("Testing RecommendationAgent...")
     rec_agent = RecommendationAgent()
     result = rec_agent.recommend("Mumbai", "Indian")
+    # print("RecommendationAgent Output:", result)
     assert isinstance(result, list)
     assert all(isinstance(r, dict) for r in result)
     logger.info("RecommendationAgent test passed.")
@@ -40,6 +41,6 @@ def test_reservation_agent_book():
 
 if __name__ == "__main__":
     test_recommendation_agent()
-    test_reservation_agent_check_availability()
-    test_reservation_agent_book()
+    # test_reservation_agent_check_availability()
+    # test_reservation_agent_book()
         
