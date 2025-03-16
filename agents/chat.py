@@ -2,6 +2,7 @@ import os
 import json
 import requests
 import re
+from datetime import datetime
 from .recommendation import RecommendationAgent
 from .reservation import ReservationAgent
 
@@ -40,10 +41,11 @@ class ChatAgent:
         intent = self._classify_intent(user_input)  # Calls Groq to classify intent
 
         if intent == "restaurants":
-            details = self._extract_restaurant_details(user_input)  # Calls Groq again for details
+            details = self.extract_restaurant_details(user_input)  # Calls Groq again for details
             return {"intent": "restaurants", **details}
         elif intent== "reservation":
-            return {"intent": "reservation"}
+            details = self.extract_reservation_details(user_input)
+            return {"intent": "reservation", **details}
         
         
     def _classify_intent(self, user_input):
@@ -97,7 +99,7 @@ class ChatAgent:
         return None
 
 
-    def _extract_restaurant_details(self, user_input):
+    def extract_restaurant_details(self, user_input):
         """Uses Groq to extract city, cuisine, num_people, and time if the intent is restaurants."""
         payload = {
             "model": "llama3-8b-8192",
@@ -121,12 +123,10 @@ class ChatAgent:
                 groq_response = response.json()["choices"][0]["message"]["content"].strip()
 
                 # Ensure JSON-only response by removing backticks or text artifacts
-                groq_response = re.sub(r'```json\n(.*?)\n```', r'\1', groq_response, flags=re.DOTALL)
-                groq_response = re.sub(r'```(.*?)```', r'\1', groq_response, flags=re.DOTALL)
-                groq_response = re.sub(r'^`(.*)`$', r'\1', groq_response, flags=re.DOTALL)
-
-                # Parse cleaned JSON
-                details = json.loads(groq_response)
+                json_match = re.search(r'\{.*\}', groq_response, re.DOTALL)
+                if json_match:
+                    json_string = json_match.group(0)  # Extract only the JSON part
+                    details = json.loads(json_string)
 
                 return {
                     "city": details.get("city"),
@@ -142,6 +142,55 @@ class ChatAgent:
 
         print(f"API Error: {response.status_code} - {response.text}")
         return {"city": None, "cuisine": None, "num_people": None, "time": None}  # Default on failure
+
+
+    def extract_reservation_details(self, user_input):
+        """Uses Groq to extract reservation details: time, date, num_people, and restaurant_name."""
+        payload = {
+            "model": "llama3-8b-8192",
+            "messages": [{
+                "role": "user",
+                "content": (
+                    "Extract structured details in JSON format with keys: "
+                    "'time', 'date', 'num_people', and 'restaurant_name'. "
+                    "return time in HH:MM:SS and date in 2025-MM-DD format if given"
+                    "If any detail is missing, return it as null. "
+                    "Strictly return only a pure JSON object with no extra text. "
+                    f"User input: {user_input}"
+                )
+            }]
+        }
+
+        response = requests.post(self.groq_api_url, headers=self.headers, json=payload)
+
+        if response.status_code == 200:
+            try:
+                groq_response = response.json()["choices"][0]["message"]["content"].strip()
+
+                # Clean and extract JSON response
+                json_match = re.search(r'\{.*\}', groq_response, re.DOTALL)
+                if json_match:
+                    json_string = json_match.group(0)  # Extract only the JSON part
+                    details = json.loads(json_string)
+
+                # Default date to today if not provided
+                if not details.get("date") or details.get("date") == "null":
+                    details["date"] = datetime.today().strftime("%Y-%m-%d")
+
+                return {
+                    "time": details.get("time"),
+                    "date": details.get("date"),
+                    "num_people": details.get("num_people"),
+                    "restaurant_name": details.get("restaurant_name")
+                }
+
+            except (json.JSONDecodeError, KeyError) as e:
+                print(f"Parsing Error: {e}")
+                print(f"Groq Raw Response: {response.text}")  # Debugging
+                return {"time": None, "date": datetime.today().strftime("%Y-%m-%d"), "num_people": None, "restaurant_name": None}
+
+        print(f"API Error: {response.status_code} - {response.text}")
+        return {"time": None, "date": datetime.today().strftime("%Y-%m-%d"), "num_people": None, "restaurant_name": None}  # Default on failure
 
     
     def chat(self):
