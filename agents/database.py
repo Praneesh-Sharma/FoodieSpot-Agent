@@ -2,6 +2,7 @@
 from sqlalchemy import text
 from database.connect import get_db
 from database.queries import GET_RESTAURANTS_BY_CITY_FOOD, CHECK_RESTAURANT_AVAILABILITY, CHECK_TABLE_AVAILABILITY, BOOK_TABLE
+import sqlite3
 
 class DatabaseAgent:
     def __init__(self):
@@ -41,7 +42,22 @@ class DatabaseAgent:
         try:
             self.db.execute(BOOK_TABLE, (restaurant_id, reservation_time))
             self.db.commit()
-            return "✅ Reservation successful!"
+            return "Reservation successful!"
         except Exception as e:
-            print(f"❌ Error booking table: {e}")
+            print(f"Error booking table: {e}")
             return "Error making reservation."
+        
+    def fetch(self, query, params=None):
+        """Executes a SELECT query and returns the results."""
+        result = self.db.execute(text(query), params).fetchall()
+        return result
+
+    def insert(self, query, params=None):
+        """Executes an INSERT query and returns the last inserted ID."""
+        try:
+            result = self.db.execute(text(query), params)
+            self.db.commit()
+            return result.lastrowid  # Returns the ID of the last inserted row
+        except Exception as e:
+            print(f"Error inserting data: {e}")
+            return None

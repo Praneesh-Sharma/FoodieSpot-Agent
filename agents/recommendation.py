@@ -17,7 +17,6 @@ class RecommendationAgent:
 
     def recommend(self, location, cuisine=None):
         """Uses DatabaseAgent to fetch restaurant recommendations."""
-        # print(f"Debug: Received request for location={location}, cuisine={cuisine}")
         recommendations = self._fetch_recommendations(location, cuisine)
         
         # Debugging: Print output before returning
