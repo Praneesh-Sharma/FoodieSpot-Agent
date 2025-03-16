@@ -37,9 +37,9 @@ class ReservationAgent:
             return {"available": True, "message": "Tables are available for booking."}
         return {"available": False, "message": "No tables available at this time."}
 
-    def book_table(self, restaurant_id, table_id, customer_name, customer_contact, date, time):
+    def book_table(self, restaurant_id, table_id, customer_name, customer_contact, num_people, date, time):
         """Books a table for a customer at a restaurant."""
-        availability = self.check_availability(restaurant_id, date, time)
+        availability = self.check_availability(restaurant_id, date, time, num_people)
         
         if not availability["available"]:
             return {"status": "failed", "message": "No available tables at this time."}
@@ -55,6 +55,7 @@ class ReservationAgent:
             "table_id": table_id,
             "customer_name": customer_name,
             "customer_contact": customer_contact,
+            "num_people": num_people,
             "reservation_time": f"{date} {time}"
         })
         
