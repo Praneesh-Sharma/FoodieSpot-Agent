@@ -2,7 +2,7 @@
 __pycache__/
 *.pyc
 venv/
-env/
+.env
 
 # Ignore IDE settings
 .vscode/
@@ -11,4 +11,3 @@ env/
 # Ignore logs and config files
 logs/
 *.log
-config.py
