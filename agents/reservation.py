@@ -28,13 +28,21 @@ class ReservationAgent:
         )
         """
         available_tables = self.db_agent.fetch(query, {
+            "id": id,
             "restaurant_id": restaurant_id,
             "reservation_time": f"{date} {time}",
             "num_people": num_people
         })
+        
+        # Convert tuples into dictionaries
+        available_tables = [{"id": table[0], "seating_capacity": table[1]} for table in available_tables]
 
         if available_tables:
-            return {"available": True, "message": "Tables are available for booking."}
+            return {
+                "available": True,
+                "message": "Tables are available for booking.",
+                "available_tables": available_tables  # Returning the actual tables
+            }
         return {"available": False, "message": "No tables available at this time."}
 
     def book_table(self, restaurant_id, table_id, customer_name, customer_contact, num_people, date, time):
@@ -58,7 +66,9 @@ class ReservationAgent:
             "num_people": num_people,
             "reservation_time": f"{date} {time}"
         })
-        
+
+        # print(f"DEBUG: Inserted Reservation ID -> {reservation_id}")  # Debugging print
+
         if reservation_id:
             return {
                 "status": "success",
@@ -69,4 +79,5 @@ class ReservationAgent:
                 "customer_contact": customer_contact,
                 "reservation_time": f"{date} {time}"
             }
+
         return {"status": "failed", "message": "Could not complete the reservation."}
