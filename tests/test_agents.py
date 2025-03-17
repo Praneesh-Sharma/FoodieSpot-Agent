@@ -41,7 +41,7 @@ def test_reservation_agent_book():
     print("ReservationAgent booking test passed.")
 
 if __name__ == "__main__":
-    # test_recommendation_agent()
+    test_recommendation_agent()
     # test_reservation_agent_check_availability()
-    test_reservation_agent_book()
+    # test_reservation_agent_book()
         

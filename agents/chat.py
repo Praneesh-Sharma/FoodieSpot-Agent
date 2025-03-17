@@ -67,9 +67,9 @@ class ChatAgent:
             "messages": [{
                 "role": "user",
                 "content": (
-                    "Determine if the user is looking for 'restaurants' or 'reservation'. "
+                    "ONLY determine if the user is looking for 'restaurants' or 'reservation'. "
                     "Respond only with a JSON object containing {'intent': <value>}, where <value> is either 'restaurants' or 'reservation'. "
-                    "Strictly give only the JSON object"
+                    "**Strictly give only the JSON object**"
                     f"User input: {user_input}"
                 )
             }]
@@ -119,7 +119,7 @@ class ChatAgent:
                 "role": "user",
                 "content": (
                     "**Only extract** structured details in JSON format with keys: "
-                    "'city', 'cuisine', 'num_people', and 'time' in in HH:MM:SS format. "
+                    "'city', 'cuisine' "
                     "If any detail is missing, return it as null. "
                     "Strictly return only a pure JSON object with no extra text. "
                     "**Donot** fetch details on your own, only focus on th user input"
@@ -140,20 +140,25 @@ class ChatAgent:
                     json_string = json_match.group(0)  # Extract only the JSON part
                     details = json.loads(json_string)
 
+                city = details.get("city")
+                cuisine = details.get("cuisine")
+    
+                # Fetch recommendations using the extracted details
+                recommendations = self.recommendation_agent.recommend(city, cuisine) if city else []
+    
                 return {
-                    "city": details.get("city"),
-                    "cuisine": details.get("cuisine"),
-                    "num_people": details.get("num_people"),
-                    "time": details.get("time")
+                    "city": city,
+                    "cuisine": cuisine,
+                    "recommendations": recommendations
                 }
-
+    
             except (json.JSONDecodeError, KeyError) as e:
                 print(f"Parsing Error: {e}")
                 print(f"Groq Raw Response: {response.text}")  # Debugging
                 return {"city": None, "cuisine": None, "num_people": None, "time": None}
 
         print(f"API Error: {response.status_code} - {response.text}")
-        return {"city": None, "cuisine": None, "num_people": None, "time": None}  # Default on failure
+        return {"city": None, "cuisine": None}  # Default on failure
 
 
     def extract_reservation_details(self, user_input):
