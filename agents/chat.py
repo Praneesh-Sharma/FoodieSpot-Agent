@@ -31,24 +31,36 @@ class ChatAgent:
         self.agent = Agent(
             name="Restaurant Assistant",
             role="An AI assistant for restaurant recommendations and reservations.",
-            goal="Help users discover and book the best restaurants.",
-            backstory="Trained on extensive restaurant data, customer reviews, and reservation systems."
+            goal="Extract data from user prompts",
+            backstory="Was built to extact details and then return a JSON object"
         )
+
+        self.conversation_state = {}
 
 
     def extract_intent(self, user_input):
         """Determines if the user wants to find restaurants or book a table."""
-        intent = self._classify_intent(user_input)  # Calls Groq to classify intent
+        intent = self.classify_intent(user_input)  # Calls Groq to classify intent
 
         if intent == "restaurants":
-            details = self.extract_restaurant_details(user_input)  # Calls Groq again for details
-            return {"intent": "restaurants", **details}
-        elif intent== "reservation":
-            details = self.extract_reservation_details(user_input)
-            return {"intent": "reservation", **details}
+            new_details = self.extract_restaurant_details(user_input)
+        elif intent == "reservation":
+            new_details = self.extract_reservation_details(user_input)
+        else:
+            return {"intent": intent}  # If intent is unrecognized, return it as is
+
+        # Update the conversation state with any new details
+        for key, value in new_details.items():
+            if value and value != "null":  # Keep old values if new ones are empty/null
+                self.conversation_state[key] = value
+
+        # Ensure the intent is stored
+        self.conversation_state["intent"] = intent
+
+        return self.conversation_state  # Return updated conversation state
         
         
-    def _classify_intent(self, user_input):
+    def classify_intent(self, user_input):
         """Uses Groq to determine if the user wants restaurants or a table booking."""
         payload = {
             "model": "llama3-8b-8192",
@@ -106,11 +118,11 @@ class ChatAgent:
             "messages": [{
                 "role": "user",
                 "content": (
-                    "Only extract structured details in JSON format with keys: "
-                    "'city', 'cuisine', 'num_people', and 'time'. "
+                    "**Only extract** structured details in JSON format with keys: "
+                    "'city', 'cuisine', 'num_people', and 'time' in in HH:MM:SS format. "
                     "If any detail is missing, return it as null. "
                     "Strictly return only a pure JSON object with no extra text. "
-                    "Donot do internal search"
+                    "**Donot** fetch details on your own, only focus on th user input"
                     f"User input: {user_input}"
                 )
             }]
