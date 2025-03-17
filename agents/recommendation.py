@@ -13,13 +13,14 @@ class RecommendationAgent:
 
     def recommend(self, location, cuisine=None):
         """Fetch actual restaurant recommendations from the database."""
-        print(f"Debug: Querying for location={location}, cuisine={cuisine if cuisine else 'Any'}")
+        # print(f"Debug: Querying for location={location}, cuisine={cuisine if cuisine else 'Any'}")
         recommendations = self.db_agent.find_restaurants(location, cuisine if cuisine else "")
             
         # Convert query results into a list of dictionaries
         formatted_recommendations = [
-            {"name": r[1], "location": r[2], "cuisine": r[3]} for r in recommendations
+            {"id": r[0], "name": r[1], "location": r[2], "cuisine": r[3]} for r in recommendations
         ]
+
         # print(f"Debug: Recommendations fetched: {formatted_recommendations}")
         
         if cuisine and formatted_recommendations:
