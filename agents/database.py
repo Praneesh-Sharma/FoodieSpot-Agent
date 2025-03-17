@@ -57,7 +57,9 @@ class DatabaseAgent:
         try:
             result = self.db.execute(text(query), params)
             self.db.commit()
-            return result.lastrowid  # Returns the ID of the last inserted row
+            inserted_id = result.scalar()
+            # print(f"DEBUG: Inserted Reservation ID -> {inserted_id}")  # Debugging
+            return inserted_id  
         except Exception as e:
-            print(f"Error inserting data: {e}")
+            print(f"ERROR in insert: {str(e)}")
             return None
