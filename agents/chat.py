@@ -42,22 +42,24 @@ class ChatAgent:
         """Determines if the user wants to find restaurants or book a table."""
         intent = self.classify_intent(user_input)  # Calls Groq to classify intent
 
+        new_details = {}
         if intent == "restaurants":
             new_details = self.extract_restaurant_details(user_input)
         elif intent == "reservation":
             new_details = self.extract_reservation_details(user_input)
-        else:
-            return {"intent": intent}  # If intent is unrecognized, return it as is
 
-        # Update the conversation state with any new details
+        if new_details is None:
+            print("Error: extract_reservation_details returned None!")  # Debugging
+            return {"intent": intent}
+
+        # Update the conversation state with extracted details
         for key, value in new_details.items():
-            if value and value != "null":  # Keep old values if new ones are empty/null
+            if value and value != "null":
                 self.conversation_state[key] = value
 
-        # Ensure the intent is stored
         self.conversation_state["intent"] = intent
+        return self.conversation_state
 
-        return self.conversation_state  # Return updated conversation state
         
         
     def classify_intent(self, user_input):
@@ -118,6 +120,7 @@ class ChatAgent:
             "messages": [{
                 "role": "user",
                 "content": (
+                    "**Donot** fetch details on your own, only focus on the user input"
                     "**Only extract** structured details in JSON format with keys: "
                     "'city', 'cuisine' "
                     "If any detail is missing, return it as null. "
@@ -145,6 +148,11 @@ class ChatAgent:
     
                 # Fetch recommendations using the extracted details
                 recommendations = self.recommendation_agent.recommend(city, cuisine) if city else []
+                
+                # Remove 'id' before returning recommendations
+                filtered_recommendations = [
+                    {k: v for k, v in r.items() if k != "id"} for r in recommendations
+                ]
     
                 return {
                     "city": city,
@@ -162,7 +170,7 @@ class ChatAgent:
 
 
     def extract_reservation_details(self, user_input):
-        """Uses Groq to extract reservation details: time, date, num_people, and restaurant_name."""
+        """Uses Groq API to extract reservation details: time, date, num_people, and restaurant_name."""
         payload = {
             "model": "llama3-8b-8192",
             "messages": [{
@@ -170,7 +178,9 @@ class ChatAgent:
                 "content": (
                     "Extract structured details in JSON format with keys: "
                     "'time', 'date', 'num_people', and 'restaurant_name'. "
-                    "return time in HH:MM:SS and date in 2025-MM-DD format if given"
+                    "Return time in HH:MM:SS format (24-hour format) **if provided**. "
+                    "Accept natural language expressions for time (e.g., '10 in the night' → '22:00:00') **if provided**. "
+                    "Return date in 2025-MM-DD format if provided, otherwise keep it null. "
                     "If any detail is missing, return it as null. "
                     "Strictly return only a pure JSON object with no extra text. "
                     f"User input: {user_input}"
@@ -183,31 +193,37 @@ class ChatAgent:
         if response.status_code == 200:
             try:
                 groq_response = response.json()["choices"][0]["message"]["content"].strip()
-
-                # Clean and extract JSON response
+                
+                # Ensure response contains valid JSON
                 json_match = re.search(r'\{.*\}', groq_response, re.DOTALL)
+                details = {}  # Initialize to prevent 'UnboundLocalError'
+                
                 if json_match:
                     json_string = json_match.group(0)  # Extract only the JSON part
                     details = json.loads(json_string)
 
-                # Default date to today if not provided
-                if not details.get("date") or details.get("date") == "null":
-                    details["date"] = datetime.today().strftime("%Y-%m-%d")
-
-                return {
-                    "time": details.get("time"),
-                    "date": details.get("date"),
-                    "num_people": details.get("num_people"),
-                    "restaurant_name": details.get("restaurant_name")
+                # Ensure all required keys exist and handle missing values
+                extracted_details = {
+                    "time": details.get("time") if details.get("time") and details.get("time") != "null" else None,
+                    "date": details.get("date") if details.get("date") and details.get("date") != "null" else None,
+                    "num_people": details.get("num_people") if details.get("num_people") and details.get("num_people") != "null" else None,
+                    "restaurant_name": details.get("restaurant_name") if details.get("restaurant_name") and details.get("restaurant_name") != "null" else None
                 }
+
+                # Handle missing values by prompting user
+                missing_fields = [k for k, v in extracted_details.items() if v is None]
+                if missing_fields:
+                    print(f"Missing details: {', '.join(missing_fields)}. Please provide them.")
+
+                return extracted_details
 
             except (json.JSONDecodeError, KeyError) as e:
                 print(f"Parsing Error: {e}")
                 print(f"Groq Raw Response: {response.text}")  # Debugging
-                return {"time": None, "date": datetime.today().strftime("%Y-%m-%d"), "num_people": None, "restaurant_name": None}
+                return {"time": None, "date": None, "num_people": None, "restaurant_name": None}
 
         print(f"API Error: {response.status_code} - {response.text}")
-        return {"time": None, "date": datetime.today().strftime("%Y-%m-%d"), "num_people": None, "restaurant_name": None}  # Default on failure
+        return {"time": None, "date": None, "num_people": None, "restaurant_name": None}  # Default on failure
 
     
     def chat(self):
