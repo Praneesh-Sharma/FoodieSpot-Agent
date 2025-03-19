@@ -1,13 +1,28 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from dotenv import load_dotenv, find_dotenv
 import os
 
-# Load database credentials from environment variables (Recommended for security)
-DB_NAME = os.getenv("DB_NAME", "foodiespot")
-DB_USER = os.getenv("DB_USER", "postgres")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "12345")
-DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_PORT = os.getenv("DB_PORT", "5432")
+# Load environment variables
+env_path = find_dotenv()
+if not env_path:
+    raise FileNotFoundError("⚠️ .env file not found! Ensure it exists in the project root.")
+
+load_dotenv(env_path)
+
+# Read database credentials
+DB_NAME = os.getenv("DB_NAME")
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
+
+# Debugging - Print values to check if they are loaded
+print(f"DB_NAME={DB_NAME}, DB_USER={DB_USER}, DB_HOST={DB_HOST}, DB_PORT={DB_PORT}")
+
+# Ensure all variables are loaded
+if not all([DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT]):
+    raise ValueError("Missing one or more required database environment variables!")
 
 # PostgreSQL Connection URL
 DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
