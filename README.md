@@ -208,20 +208,6 @@ CREATE TABLE tables (
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create a function for the trigger (placeholder; define as needed)
-CREATE OR REPLACE FUNCTION notify_table_update() RETURNS TRIGGER AS $$  
-BEGIN
-    -- Add your notification logic here
-    RETURN NEW;
-END;
-  $$ LANGUAGE plpgsql;
-
--- Create the trigger for tables
-CREATE TRIGGER table_update_trigger
-AFTER UPDATE ON tables
-FOR EACH ROW
-EXECUTE FUNCTION notify_table_update();
-
 -- Create reservations table
 CREATE TABLE reservations (
     id SERIAL PRIMARY KEY,
