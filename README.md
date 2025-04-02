@@ -1,6 +1,6 @@
 # FoodieSpot-Agent
 
-**FoodieSpot-Agent** is an AI-powered restaurant assistant built using Python and Streamlit. It helps users find restaurant recommendations based on city and cuisine preferences and allows them to make reservations seamlessly. The project leverages the CrewAI framework for agent-based workflows, integrates with a PostgreSQL database, and uses the Grok API for intent extraction.
+**FoodieSpot-Agent** is an AI-powered restaurant assistant built using Python and Streamlit. It helps users find restaurant recommendations based on city and cuisine preferences and allows them to make reservations seamlessly. The project leverages the CrewAI framework for agent-based workflows, integrates with a PostgreSQL database, and uses the Groq API for intent extraction.
 
 ## Features
 - **Restaurant Recommendations**: Get personalized restaurant suggestions by city and cuisine.
@@ -48,7 +48,7 @@ FOODIESPOT-AGENT/
 
 - **Python 3.8+**: Ensure Python is installed on your system.
 - **PostgreSQL**: A running PostgreSQL server for the database.
-- **Groq API Key**: Required for intent extraction via the Grok API.
+- **Groq API Key**: Required for intent extraction via the Groq API.
 - **Virtual Environment**: Recommended to manage dependencies.
 
 ## Setup Instructions
@@ -94,7 +94,7 @@ DB_PASSWORD=<your-password>
 DB_HOST=localhost
 DB_PORT=5432
 ```
-- Note: Replace <your-groq-api-key> with your actual Grok API key.
+- Note: Replace <your-groq-api-key> with your actual Groq API key.
 - Note: Replace <your-username> with your actual PostgreSQL username.
 - Note: Replace <your-password> with your actual PostgreSQL password.
 
@@ -119,7 +119,7 @@ The `.env` file contains the following configurations:
 
 | Variable         | Description                          
 |------------------|--------------------------------------
-| `GROQ_API_KEY`   | API key for Grok API access         
+| `GROQ_API_KEY`   | API key for Groq API access         
 | `DB_NAME`        | PostgreSQL database name            
 | `DB_USER`        | PostgreSQL username                 
 | `DB_PASSWORD`    | PostgreSQL password                 
@@ -224,7 +224,7 @@ CREATE TABLE reservations (
 
 
 ## File Descriptions
-- agents/chat.py: Extracts user intent (e.g., "restaurants" or "reservation") using the Grok API and processes user input.
+- agents/chat.py: Extracts user intent (e.g., "restaurants" or "reservation") using the Groq API and processes user input.
 - agents/database.py: Handles database connections and operations with PostgreSQL.
 - agents/recommendation.py: Fetches restaurant recommendations based on city and cuisine.
 - agents/reservation.py: Manages table availability checks and reservations.
@@ -255,7 +255,7 @@ pytest tests/
 - Built with [Streamlit](https://streamlit.io/) for the frontend.
 - Uses [CrewAI](https://github.com/joaomdmoura/crewAI) for agent workflows.
 - Integrates with [PostgreSQL](https://www.postgresql.org/) for data storage.
-- Powered by [Grok API](https://grok.x.ai/) for intent extraction.
+- Powered by [Groq API](https://console.groq.com/playground) for intent extraction.
 
 ## Contributors
 This project was made possible by the following contributors:
@@ -263,3 +263,5 @@ This project was made possible by the following contributors:
 - [Nayeer Naushad](https://github.com/nayeer1169)
 - [Preenon Saha](https://github.com/Preenon1462003)
 - [Shibaa Naik](https://github.com/shibaanaik)
+- [Shravan Sererl](https://github.com/shravan-serel)
+- [Rishav Das](https://github.com/Rishavdas07)
